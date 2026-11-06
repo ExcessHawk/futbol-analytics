@@ -9,6 +9,10 @@ boletos de apuestas por foto** (OpenCV + Tesseract).
 > ninguna liga. En ~34,000 partidos fuera de muestra pierde contra las cuotas de cierre por ~0.02 de log loss, con
 > intervalos de confianza que no incluyen el cero. El dashboard lo dice en cada predicción.
 
+📚 Documentación técnica en [`docs/`](docs/README.md): [arquitectura](docs/arquitectura.md), [datos](docs/datos.md),
+[modelos y validación](docs/modelos.md), [analizador de boletos](docs/boletos.md), [operación](docs/operacion.md) y
+[desarrollo](docs/desarrollo.md).
+
 ---
 
 ## Qué hace
@@ -193,6 +197,7 @@ scripts/              comandos (ingesta, backtest, actualización diaria)
 app/                  dashboard de Streamlit (Inicio.py + views/)
 sql/schema.sql        esquema idempotente, con migraciones
 tests/                pytest (los de la app se saltan si no hay base de datos)
+docs/                 documentación técnica
 ```
 
 ## Calidad
