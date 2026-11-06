@@ -74,6 +74,10 @@ def standings(matches: pd.DataFrame) -> pd.DataFrame:
         sot_for=("sot_for", "sum"),
         sot_against=("sot_against", "sum"),
     )
+    # Counts are integers even when goals arrive as floats (a column with a not-yet-played
+    # match is float in pandas): the dashboard formats them with "{:+d}".
+    for col in ("goals_for", "goals_against", "points"):
+        table[col] = table[col].round().astype(int)
     table["goal_diff"] = table.goals_for - table.goals_against
     table["pts_minus_xpts"] = table.points - table.xpts
     table["shots_pm"] = table.shots_for / table.played

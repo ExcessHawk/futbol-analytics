@@ -36,6 +36,11 @@ def test_points_form_and_unplayed_fixtures():
     assert t.loc["A", "form"] == "G E P"
     assert t.loc["C", "points"] == 3
     assert t.index[0] == "A"  # 4 pts beats C's 3
+    # The unplayed row makes the goal columns float; the table must still hold integers,
+    # because the dashboard formats them with "{:+d}" (crashed in production).
+    for col in ("goals_for", "goals_against", "goal_diff", "points"):
+        assert pd.api.types.is_integer_dtype(t[col]), col
+    assert "{:+d}".format(t.loc["A", "goal_diff"]) == "+1"
 
 
 def test_expected_points_match_implied_probabilities():
