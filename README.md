@@ -111,6 +111,11 @@ lo indica y muestra al lado la frecuencia real de esa línea en la temporada.
 
 ## Puesta en marcha
 
+> **El repositorio no trae datos.** Son ~200 MB de respuestas originales de las APIs y una base de 1.1 GB, y
+> ninguno de los dos cabe aquí. Al clonar, la base está vacía y el dashboard arranca con todo en cero: eso no
+> es un fallo, es el estado inicial. La sección siguiente lo llena desde las fuentes, y las dos primeras
+> —resultados, cuotas y eventos de StatsBomb— son públicas y no piden ninguna clave.
+
 Requisitos: Python 3.14, Docker (para PostgreSQL) y Tesseract OCR (solo para el analizador de boletos).
 
 ```bash
@@ -227,3 +232,22 @@ leen las apuestas y las cuotas.
 - La alineación probable acierta de media 8.3 de 11 titulares; no ve las rotaciones por copa o competición europea
   (solo conoce los partidos de liga). Liga MX y Argentina no tienen parte de bajas en API-Football.
 - Liga MX Femenil no está incluida: API-Football no tiene estadísticas de jugadoras ni de partido para esa liga.
+
+---
+
+## Para qué sirve y para qué no
+
+Esto es una herramienta de **análisis**, no un servicio de apuestas y no un sistema para ganar dinero. El propio
+proyecto mide que su modelo pierde contra las cuotas de cierre en las ocho ligas, y esa medición está arriba, no
+escondida. El analizador de boletos existe para leer lo que ya apostaste y decirte qué probabilidad le da el
+modelo — que, repito, es peor que la del mercado.
+
+Si buscas un sistema rentable, el resultado honesto de este repositorio es que aquí no está.
+
+## Licencia
+
+[MIT](LICENSE). Haz lo que quieras con el código, con atribución y sin garantía.
+
+Los **datos** son otra cosa y no los cubre esta licencia: football-data.co.uk, StatsBomb Open Data,
+fixturedownload.com y API-Football tienen cada uno sus propias condiciones, y quien los descargue las acepta por su
+cuenta. Aquí no se redistribuye ninguno: el repositorio solo trae el código que los va a buscar.
