@@ -1,0 +1,11 @@
+# Fixed light theme: the mplsoccer figures are rendered on a light surface, so a dark
+# UI around them (Streamlit follows the OS by default) would clash and hide chart labels.
+[theme]
+base = "light"
+primaryColor = "#2a78d6"
+backgroundColor = "#fcfcfb"
+secondaryBackgroundColor = "#f0efec"
+textColor = "#0b0b0b"
+
+[browser]
+gatherUsageStats = false

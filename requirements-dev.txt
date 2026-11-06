@@ -1,0 +1,5 @@
+# Development-only tools (tests, lint, notebooks). Not needed on the server.
+-r requirements.txt
+pytest==9.2.0
+ruff==0.17.4
+jupyterlab==4.6.5

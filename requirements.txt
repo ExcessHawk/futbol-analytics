@@ -1,0 +1,33 @@
+# Runtime dependencies, pinned to the versions the test suite passes with (Python 3.14).
+# Upgrade deliberately: bump, run `pytest`, commit.
+
+# Data wrangling
+pandas==3.1.1
+numpy==2.5.4
+
+# Data sources
+statsbombpy==1.22.0          # StatsBomb Open Data (2015/16 event data, xG experiment)
+requests==2.34.2             # football-data.co.uk, fixturedownload.com, API-Football
+
+# Database
+SQLAlchemy==2.1.8
+psycopg[binary]==3.3.8       # PostgreSQL driver (v3, binary wheels: no compiler needed)
+
+# Modelling
+scipy==1.18.1
+scikit-learn==1.9.1
+
+# Dashboard and charts
+streamlit==1.67.0
+altair==6.3.0
+matplotlib==3.11.2
+mplsoccer==1.8.1
+pillow==13.0.0
+
+# Bet-slip OCR (also needs the Tesseract binary: apt install tesseract-ocr)
+opencv-python-headless==5.0.0.93
+pytesseract==0.3.13
+rapidfuzz==3.14.6
+
+# Config
+python-dotenv==1.2.4

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "futbol-analytics"
+version = "0.1.0"
+description = "Football analytics dashboard and match prediction model (StatsBomb + Understat)."
+readme = "README.md"
+requires-python = ">=3.11"
+# Runtime dependencies live in requirements.txt (Streamlit Cloud reads that file).
+# This file only makes `src/futbol` an installable package.
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# E/F: pycodestyle + pyflakes, I: import sorting, B: common bugs, UP: modern syntax
+select = ["E", "F", "I", "B", "UP"]
+# Line length is the formatter's job; E501 would only flag hand-aligned `# fmt: skip` blocks.
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
