@@ -32,9 +32,10 @@ ruff check . && ruff format --check .
 | `test_season.py` | Clasificación, forma, fase regular de Liga MX | No |
 | `test_betslip.py` | OCR con boletos sintéticos, parser, cuotas, comprobaciones | No (sí Tesseract) |
 | `test_real_slip.py` | Parser con el texto de un boleto real | No |
+| `test_lineups.py` | Parser de alineaciones y bajas, alineación probable, su backtest, orientación del campo | No |
 | `test_leagues_api.py` | Registro de ligas, transformaciones de API-Football | No |
 | `test_config.py` | Variables de entorno | No |
-| `test_app.py` | Cada vista con `streamlit.testing` (AppTest), en las 8 ligas | Sí |
+| `test_app.py` | Cada vista con `streamlit.testing` (AppTest), en las 8 ligas; Alineaciones en sus dos modos | Sí |
 
 Las pruebas que necesitan base de datos o Tesseract se saltan si no están disponibles.
 
@@ -60,6 +61,10 @@ Las pruebas que necesitan base de datos o Tesseract se saltan si no están dispo
 - Fichas de partido: `app/match_card.py` (`render` para próximos, `render_past` para jugados).
 - Tablas en móvil: las columnas importantes primero, porque en pantallas estrechas el resto queda fuera y hay que
   desplazar la tabla.
+- **Clics en gráficos:** `st.altair_chart(..., on_select="rerun")` con una `selection_point`. Vega no detecta
+  bien los clics sobre imágenes, por eso el campo pone encima de cada foto un círculo casi transparente
+  (`opacity=0.001`) que recibe el clic y el tooltip. AppTest no puede hacer clic en un gráfico: eso se comprobó con
+  Chrome real.
 - Para probar una vista nueva, añadirla a `test_app.py` siguiendo el patrón existente (`AppTest.from_file` +
   `switch_page`) y comprobar que no lanza excepciones con cada liga.
 

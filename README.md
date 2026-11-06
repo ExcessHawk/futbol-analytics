@@ -22,6 +22,7 @@ boletos de apuestas por foto** (OpenCV + Tesseract).
 | **Clasificación y forma** | Tabla, forma reciente (G/E/P), zonas de la liga y **puntos frente a los puntos esperados** según las cuotas. Liga MX por torneo (Apertura/Clausura) sin contar la liguilla. |
 | **Equipos** | xG y xG en contra, goles − xG, tiros, tiros a puerta, córners y tarjetas a favor y en contra por partido; tendencia de xG y registro de cada partido. |
 | **Jugadores** | Ranking por 90 minutos y ficha partido a partido de cada jugador, con **cuántas veces superó cada línea** (p. ej. "3 o más tiros a puerta en 6 de 11 partidos"). |
+| **Alineaciones** | Campo con los dos onces y la foto de cada jugador. Próximo partido: **alineación probable** (la formación del último partido, quien más ha jugado en cada puesto, sin los lesionados ni sancionados) y el **parte de bajas** con su motivo. Partido jugado: el once real con el rating de cada jugador. Un clic en un jugador abre su temporada y sus últimos partidos. |
 | **Predicciones** | Próximos partidos (clic para ver el detalle): 1X2, goles esperados, marcadores, más/menos, ambos marcan, córners, tarjetas y tiros. Simulador de cualquier enfrentamiento, historial con lo que predijo el modelo y la **fiabilidad medida de cada mercado**. |
 | **Analizar boleto** | Sube una o varias capturas del boleto: OCR, apuestas reconocidas (partido, mercado, cuota, apuestas de jugador), comprobación de la cuota total, probabilidad del modelo, valor esperado y probabilidad de acertar la combinada (con boost). |
 
@@ -138,6 +139,9 @@ Tesseract: en Debian/Ubuntu `sudo apt install tesseract-ocr`; en Windows, el ins
 | 5. Modelos y backtest | `python scripts/run_backtest.py` | 15–20 min |
 | 6. Dashboard | `streamlit run app/Inicio.py` | — |
 
+Las alineaciones se guardan con cada descarga. En una base de datos creada antes de que existieran, se cargan una
+vez desde los JSON del disco, sin gastar peticiones: `python scripts/load_lineups.py`.
+
 `download_api_football.py` es reanudable (salta lo ya descargado) y va al 40% del límite por minuto de la API para no
 arriesgar un bloqueo. Guarda el JSON original comprimido en `data/raw/api_football/`, así que los datos siguen
 disponibles aunque el plan de pago caduque.
@@ -192,6 +196,7 @@ src/futbol/
   season.py           clasificación, forma, puntos esperados, fase regular de Liga MX
   api_stats.py        tablas de equipos y jugadores a partir de API-Football
   betslip.py          OCR de boletos: OpenCV, Tesseract, parser y evaluación
+  lineups.py          alineación probable (últimas alineaciones + parte de bajas) y su backtest
   ingest/             football-data, API-Football, calendario, StatsBomb, cruce de equipos
 scripts/              comandos (ingesta, backtest, actualización diaria)
 app/                  dashboard de Streamlit (Inicio.py + views/)
@@ -203,7 +208,7 @@ docs/                 documentación técnica
 ## Calidad
 
 ```bash
-pytest                 # 104 pruebas: modelos, métricas, parser de boletos (también con texto de un boleto real), vistas
+pytest                 # 127 pruebas: modelos, métricas, alineaciones, parser de boletos (también con un boleto real), vistas
 ruff check . && ruff format --check .
 ```
 
@@ -219,4 +224,6 @@ leen las apuestas y las cuotas.
 - Las apuestas de jugador no están validadas con backtest; no saben si el jugador será titular.
 - El lector de boletos se probó con un formato de casa de apuestas y con boletos sintéticos; otros formatos pueden
   necesitar ajustes (la tabla de revisión permite corregir cualquier lectura).
+- La alineación probable acierta de media 8.3 de 11 titulares; no ve las rotaciones por copa o competición europea
+  (solo conoce los partidos de liga). Liga MX y Argentina no tienen parte de bajas en API-Football.
 - Liga MX Femenil no está incluida: API-Football no tiene estadísticas de jugadoras ni de partido para esa liga.

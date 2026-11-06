@@ -107,3 +107,16 @@ def test_bet_slip_analyser_with_sample(variant):
     at.run()
     assert not at.exception, [e.value for e in at.exception]
     assert any(m.label == "Probabilidad de acertar todo" for m in at.metric)
+
+
+@pytest.mark.parametrize("league", ["E0", "SP1", "D1", "I1", "F1", "MEX", "ARG", "BRA"])
+@pytest.mark.parametrize("mode", ["next", "played"])
+def test_lineups_view_for_every_league(league, mode):
+    at = open_view("views/alineaciones.py")
+    at.session_state["xi_league"] = league
+    at.session_state["xi_mode"] = mode
+    at.run()
+    assert not at.exception, [e.value for e in at.exception]
+    if not at.info:  # data present: a pitch and a player card were drawn
+        assert at.get("arrow_vega_lite_chart") or at.get("vega_lite_chart")
+        assert any(sb.label.startswith("Jugador") for sb in at.selectbox)

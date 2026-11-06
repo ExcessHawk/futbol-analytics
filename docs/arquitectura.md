@@ -59,6 +59,8 @@ Tres capas con responsabilidades separadas:
 | `experiments.py` | Experimentos guardados: varias temporadas, xG frente a goles, mercados, próximos partidos |
 | `season.py` | Clasificación, forma, puntos esperados, fase regular de Liga MX |
 | `api_stats.py` | Tablas de equipos y jugadores a partir de API-Football; frecuencias de líneas |
+| `lineups.py` | Alineación probable a partir de las últimas alineaciones y el parte de bajas; su backtest |
+| `ingest/api_matchday.py` | Próximos partidos, parte de bajas y fotos de jugadores (en caché en disco) |
 | `betslip.py` | Lector de boletos: OpenCV, Tesseract, parser, evaluación |
 | `metrics.py`, `viz.py` | Métricas de eventos de StatsBomb (PPDA, pases progresivos) y gráficos de cancha |
 
@@ -69,6 +71,7 @@ app/Inicio.py          punto de entrada: configuración de página y navegación
 app/common.py          consultas en caché (st.cache_data / st.cache_resource) compartidas por las vistas
 app/styles.py          reglas de color de las tablas (estado, divergente, secuencial)
 app/match_card.py      ficha de partido: próximo (predicción) y jugado (estadísticas frente a predicción)
+app/pitch.py           campo de fútbol en Altair con los dos onces; el clic en un jugador vuelve a la vista
 app/views/*.py         una vista por página
 ```
 

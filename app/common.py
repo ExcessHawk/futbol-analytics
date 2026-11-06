@@ -460,3 +460,122 @@ def api_freshness_note(rows: pd.DataFrame) -> str:
         f"{rows.fixture_id.nunique()} partidos · último: {last:%d/%m/%Y} · fuente: API-Football. "
         "Se actualiza con `python scripts/update.py`."
     )
+
+
+# --------------------------------------------------------------------------- lineups
+
+
+INJURY_REASONS_ES = {
+    "Knee Injury": "Lesión de rodilla", "Muscle Injury": "Lesión muscular",
+    "Hamstring Injury": "Lesión en isquiotibiales", "Injury": "Lesión", "Red Card": "Sanción (roja)",
+    "Yellow Cards": "Sanción (amarillas)", "Suspended": "Sanción", "Ankle Injury": "Lesión de tobillo",
+    "Coach's decision": "Decisión técnica", "Shoulder Injury": "Lesión de hombro", "Illness": "Enfermedad",
+    "Groin Injury": "Lesión en la ingle", "Calf Injury": "Lesión en el gemelo", "Back Injury": "Lesión de espalda",
+    "Foot Injury": "Lesión en el pie", "Thigh Injury": "Lesión en el muslo", "Hip Injury": "Lesión de cadera",
+    "Achilles Tendon Injury": "Tendón de Aquiles", "Concussion": "Conmoción", "Broken Leg": "Fractura de pierna",
+    "Knock": "Golpe", "Rest": "Descanso", "Personal Reasons": "Motivos personales",
+    "Inactive": "Inactivo", "Lack of fitness": "Falta de forma", "Virus": "Virus",
+    "Muscle strain": "Sobrecarga muscular", "Adductor Injury": "Lesión en el aductor",
+    "Ligament Injury": "Lesión de ligamento", "Cruciate Ligament Injury": "Rotura de ligamento cruzado",
+    "Meniscus Injury": "Lesión de menisco", "Head Injury": "Lesión en la cabeza",
+    "Fitness": "Condición física", "Loan agreement": "Cláusula de cesión",
+}  # fmt: skip
+
+
+def local_time(ts) -> pd.Timestamp:
+    """UTC kick-off in the server's time zone (the same one the sidebar uses)."""
+    return pd.Timestamp(ts).tz_convert(datetime.now().astimezone().tzinfo)
+
+
+@st.cache_data(ttl=CACHE_TTL)
+def api_upcoming(league_code: str) -> pd.DataFrame:
+    return read_sql(
+        "SELECT * FROM api_upcoming WHERE league_code = :l AND kickoff_utc > now() - interval '3 hours' "
+        "ORDER BY kickoff_utc",
+        l=league_code,
+    )
+
+
+@st.cache_data(ttl=CACHE_TTL)
+def api_played_with_lineups(league_code: str, season: int) -> pd.DataFrame:
+    return read_sql(
+        """
+        SELECT f.* FROM api_fixture f
+        WHERE f.league_code = :l AND f.season = :s
+          AND EXISTS (SELECT 1 FROM api_lineup l WHERE l.fixture_id = f.fixture_id
+                      AND l.formation IS NOT NULL)
+        ORDER BY f.kickoff_utc DESC
+        """,
+        l=league_code,
+        s=season,
+    )
+
+
+@st.cache_data(ttl=CACHE_TTL)
+def team_recent_lineups(team_id: int, before: pd.Timestamp, k: int = 6) -> pd.DataFrame:
+    """Every lineup row (starters and bench) of the team's last k matches before a date."""
+    return read_sql(
+        """
+        SELECT p.*, l.formation, f.kickoff_utc
+        FROM api_lineup_player p
+        JOIN api_lineup l USING (fixture_id, team_id)
+        JOIN api_fixture f USING (fixture_id)
+        WHERE p.team_id = :t AND p.fixture_id IN (
+            SELECT l2.fixture_id FROM api_lineup l2 JOIN api_fixture f2 USING (fixture_id)
+            WHERE l2.team_id = :t AND l2.formation IS NOT NULL AND f2.kickoff_utc < :b
+            ORDER BY f2.kickoff_utc DESC LIMIT :k)
+        """,
+        t=int(team_id),
+        b=pd.Timestamp(before),
+        k=k,
+    )
+
+
+@st.cache_data(ttl=CACHE_TTL)
+def team_injuries(
+    team_id: int, fixture_id: int, kickoff: pd.Timestamp
+) -> tuple[pd.DataFrame, bool]:
+    """(report, is_for_this_fixture). Reports are usually published a day or two before the
+    match; until then the team's latest report is the best available (flagged as such)."""
+    exact = read_sql(
+        "SELECT * FROM api_injury WHERE fixture_id = :f AND team_id = :t",
+        f=int(fixture_id),
+        t=int(team_id),
+    )
+    if not exact.empty:
+        return exact, True
+    latest = read_sql(
+        """
+        SELECT * FROM api_injury WHERE team_id = :t AND fixture_id = (
+            SELECT fixture_id FROM api_injury WHERE team_id = :t AND kickoff_utc < :k
+            ORDER BY kickoff_utc DESC LIMIT 1)
+        """,
+        t=int(team_id),
+        k=pd.Timestamp(kickoff),
+    )
+    return latest, False
+
+
+@st.cache_data(ttl=CACHE_TTL)
+def fixture_lineups(fixture_id: int) -> pd.DataFrame:
+    """Actual lineups of a played match with each player's rating and output in it."""
+    return read_sql(
+        """
+        SELECT p.*, l.formation, l.coach, m.rating, m.minutes, m.goals, m.assists, m.shots_on,
+               m.yellow, m.red
+        FROM api_lineup_player p
+        JOIN api_lineup l USING (fixture_id, team_id)
+        LEFT JOIN api_player_match m USING (fixture_id, player_id)
+        WHERE p.fixture_id = :f
+        """,
+        f=int(fixture_id),
+    )
+
+
+@st.cache_data(ttl=24 * CACHE_TTL, show_spinner=False)
+def player_photo_uri(player_id: int, name: str, color: str) -> str:
+    from pitch import photo_uri
+
+    from futbol.ingest.api_matchday import player_photo  # network on first use only
+
+    return photo_uri(player_photo(player_id), name, color)

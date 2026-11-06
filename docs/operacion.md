@@ -14,6 +14,7 @@ actualiza datos, no los duplica.
 | `update.py` | Actualización diaria completa (ver abajo) | — |
 | `download_api_football.py` | Estadísticas de equipo y jugador por partido | `--leagues`, `--seasons 2015 … 2026`, `--budget 3000` (máximo de peticiones) |
 | `ingest_statsbomb.py` | Eventos StatsBomb 2015/16 | `--workers 8`, `--limit N` (pruebas), `--force` |
+| `load_lineups.py` | Carga las alineaciones desde los JSON del disco (una vez, en bases creadas antes de guardarlas) y descarga próximos partidos y bajas | — |
 | `build_metrics.py` | Tablas derivadas de StatsBomb y cruce de equipos | — |
 | `run_backtest.py` | Ajuste de hiperparámetros, backtest de todas las ligas, mercados, próximos partidos y fuerza de los equipos | `--skip-tuning`, `--leagues`, `--current-only`, `--markets-only` |
 
@@ -24,8 +25,9 @@ actualiza datos, no los duplica.
 2. Liga MX, Argentina y Brasil (resultados y cuotas).
 3. Elimina partidos aplazados que siguen como "sin jugar" con fecha pasada.
 4. Predicciones walk-forward de la temporada en curso y de los próximos partidos, con los hiperparámetros guardados.
-5. API-Football: partidos terminados nuevos de la temporada actual (máximo 400 peticiones). Si falta la clave o el plan
-   ha caducado, lo registra y sigue: el resto de la actualización no se pierde.
+5. API-Football: partidos terminados nuevos de la temporada actual con sus alineaciones (máximo 400 peticiones), y los
+   próximos partidos y el parte de bajas de cada liga (16 peticiones). Si falta la clave o el plan ha caducado, lo
+   registra y sigue: el resto de la actualización no se pierde.
 6. Muestra la fecha del último partido jugado de cada liga.
 
 Tarda ~1 minuto. Ejemplo de cron (la cuota de API-Football se reinicia a las 00:00 UTC):
@@ -65,4 +67,6 @@ El backtest completo (`run_backtest.py` sin opciones) solo hace falta cuando cam
 | `Free plans do not have access to this season` | El plan Pro caducó | Renovarlo o limitarse a lo descargado; `update.py` sigue funcionando sin esa parte |
 | `download_api_football.py` se detiene antes de terminar | Se alcanzó `--budget` o la reserva diaria | Volver a ejecutarlo: salta lo ya descargado |
 | Liga sin próximos partidos | football-data publica `fixtures.csv` solo para la próxima semana; Liga MX, Argentina y Brasil no tienen calendario | Esperar a la siguiente actualización; en esas ligas el simulador sí funciona |
+| La vista Alineaciones no muestra próximos partidos | `api_upcoming` vacía: base creada antes de esta vista | `python scripts/load_lineups.py` |
+| Sin parte de bajas en Liga MX o Argentina | API-Football no lo publica para esas ligas | — |
 | Un partido aparece dos veces | Aplazamiento con fecha nueva | `update.py` lo limpia (`drop_stale_fixtures`) |

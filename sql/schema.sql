@@ -316,3 +316,58 @@ CREATE TABLE IF NOT EXISTS api_player_match (
     PRIMARY KEY (fixture_id, player_id)
 );
 CREATE INDEX IF NOT EXISTS ix_api_player_match_player ON api_player_match (player_id);
+
+-- ---------------------------------------------------------------- lineups, injuries, upcoming
+
+-- One row per team per fixture: formation and coach (from the stored /fixtures payload).
+CREATE TABLE IF NOT EXISTS api_lineup (
+    fixture_id   integer  NOT NULL REFERENCES api_fixture ON DELETE CASCADE,
+    team_id      integer  NOT NULL,
+    formation    text,
+    coach        text,
+    PRIMARY KEY (fixture_id, team_id)
+);
+
+-- Every player in the match sheet. grid = 'row:col' for starters: row 1 = goalkeeper,
+-- col 1 = the team's left flank. Substitutes have no grid.
+CREATE TABLE IF NOT EXISTS api_lineup_player (
+    fixture_id   integer  NOT NULL REFERENCES api_fixture ON DELETE CASCADE,
+    team_id      integer  NOT NULL,
+    player_id    integer  NOT NULL,
+    player_name  text     NOT NULL,
+    number       smallint,
+    pos          text,                              -- G / D / M / F
+    grid         text,
+    started      boolean  NOT NULL,
+    PRIMARY KEY (fixture_id, player_id)
+);
+CREATE INDEX IF NOT EXISTS ix_api_lineup_player_team ON api_lineup_player (team_id);
+
+-- Fixtures not played yet (kept apart from api_fixture, whose rows mean "downloaded").
+CREATE TABLE IF NOT EXISTS api_upcoming (
+    fixture_id   integer PRIMARY KEY,
+    league_code  text        NOT NULL,
+    season       integer     NOT NULL,
+    kickoff_utc  timestamptz NOT NULL,
+    round        text,
+    home_id      integer     NOT NULL,
+    home_name    text        NOT NULL,
+    away_id      integer     NOT NULL,
+    away_name    text        NOT NULL,
+    fetched_at   timestamptz NOT NULL DEFAULT now()
+);
+
+-- Players reported out (or doubtful) for a fixture: /injuries?league&season.
+CREATE TABLE IF NOT EXISTS api_injury (
+    fixture_id   integer  NOT NULL,
+    league_code  text     NOT NULL,
+    team_id      integer  NOT NULL,
+    player_id    integer  NOT NULL,
+    player_name  text     NOT NULL,
+    kind         text     NOT NULL,                 -- 'Missing Fixture' / 'Questionable'
+    reason       text,
+    kickoff_utc  timestamptz,
+    fetched_at   timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (fixture_id, player_id)
+);
+CREATE INDEX IF NOT EXISTS ix_api_injury_team ON api_injury (team_id, kickoff_utc);

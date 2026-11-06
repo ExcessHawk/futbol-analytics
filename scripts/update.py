@@ -3,7 +3,8 @@
   1. football-data: re-download the season in progress (results, stats, odds) of the
      Big-5 and of Liga MX / Argentina / Brasil,
      the upcoming fixtures file and the full season schedule (fixturedownload.com)
-  2. models: walk-forward predictions for the current season, predictions for the
+  2. API-Football: new finished fixtures (stats, lineups), next fixtures, injury reports
+  3. models: walk-forward predictions for the current season, predictions for the
      upcoming fixtures and today's team ratings, with the stored tuned parameters
 
 StatsBomb event data is not touched: there is no newer free event data to fetch.
@@ -19,6 +20,7 @@ from futbol.db import init_schema, read_sql
 from futbol.experiments import load_params, update_current_season
 from futbol.ingest.api_fixtures import download
 from futbol.ingest.api_football import ApiFootballError, has_key
+from futbol.ingest.api_matchday import update_matchday
 from futbol.ingest.football_data import (
     current_season_start,
     drop_stale_fixtures,
@@ -49,6 +51,10 @@ def update_api_football() -> None:
         log.info("API-Football: %d requests", used)
     except (ApiFootballError, requests.RequestException) as exc:
         log.warning("API-Football update skipped: %s", exc)
+    try:  # next fixtures and injury reports: 2 requests per league
+        log.info("API-Football matchday: %d requests", update_matchday(ALL_LEAGUES))
+    except (ApiFootballError, requests.RequestException) as exc:
+        log.warning("API-Football matchday skipped: %s", exc)
 
 
 def main() -> None:

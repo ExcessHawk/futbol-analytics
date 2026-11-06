@@ -53,6 +53,26 @@ principal de cada liga es el `.5` más cercano a su media.
   promedio del jugador ya refleja la fuerza de su propio equipo; solo hay que ajustar rival y campo. **No está
   validado** con un backtest propio.
 
+## Alineación probable (`lineups.py`)
+
+1. Formación: la del último partido.
+2. Cada puesto de esa formación (`grid`) es para quien más veces lo ha ocupado en los últimos 6 partidos de liga,
+   con más peso para los recientes (cada partido anterior pesa la mitad que el siguiente) y algo de crédito por haber
+   jugado en otro puesto de la misma línea. Los jugadores de baja en el parte quedan fuera.
+3. Si el titular de un puesto está de baja, entra el jugador más usado de la misma línea (también desde el banquillo).
+
+Validado con `backtest_probable_xi` en los partidos de 2026 de las cinco grandes y Brasil (3,364 alineaciones), usando
+solo los partidos anteriores y el parte de bajas de cada partido:
+
+| Método | Titulares acertados (de 11) |
+|---|---|
+| Alineación probable | 8.27 |
+| Repetir el once del último partido | 8.13 |
+
+El peso del último partido (0.5) y el crédito por línea (0.3) se eligieron sobre los partidos de 2026 de Premier,
+LaLiga y Serie A; con el peso original (0.75), el modelo sin parte de bajas quedaba por debajo de repetir el último
+once. La alineación oficial se publica ~30 minutos antes del partido.
+
 ## Validación (`validation.py`, `experiments.py`)
 
 ### Backtest walk-forward

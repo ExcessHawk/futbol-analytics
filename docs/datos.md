@@ -56,6 +56,14 @@ e incluye sus migraciones. Las tablas principales:
 | `api_team_match` | equipo y partido | `shots_on`, `shots_total`, `corners`, `fouls`, `yellow`, `red`, `possession`, `xg` |
 | `api_player_match` | jugador y partido | `minutes`, `started`, `substitute`, `position`, `rating`, `shots_total`, `shots_on`, `goals`, `assists`, `key_passes`, `yellow` |
 | `api_player_cache` | búsqueda | Respuestas de `/players?search=` guardadas 24 h |
+| `api_lineup` | equipo y partido | `formation`, `coach` |
+| `api_lineup_player` | jugador convocado y partido | `number`, `pos`, `started`, `grid` (`fila:columna` de los titulares: fila 1 = portero, columna 1 = banda izquierda del equipo) |
+| `api_upcoming` | próximo partido | Los siguientes 20 partidos de cada liga, aún sin jugar |
+| `api_injury` | jugador y partido | Parte de bajas: `kind` (`Missing Fixture` = baja, `Questionable` = duda) y `reason`. Solo las cinco grandes y Brasil |
+
+Las fotos de los jugadores (`media.api-sports.io`, no gastan cuota) se descargan una vez a
+`data/raw/api_football_media/players/` y la app las sirve desde ahí: API-Football pide no enlazarlas directamente.
+Los nombres llegan a veces con entidades HTML ("O&apos;Brien") y se decodifican al guardarlos.
 
 Cuando un jugador no hace ningún tiro, la API devuelve `null`, no 0; `api_stats.py` lo trata como 0.
 

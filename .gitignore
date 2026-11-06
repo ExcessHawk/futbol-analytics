@@ -26,3 +26,7 @@ data/tessdata/
 Thumbs.db
 .vscode/
 .idea/
+
+# Artefacto del backtest: 15 MB binarios que se regeneran con run_backtest.py.
+# En un repo publico se quedarian en el historial para siempre.
+*.pkl

@@ -11,6 +11,7 @@ Re-runs skip fixtures already in api_fixture (resumable after a quota stop).
 from __future__ import annotations
 
 import gzip
+import html
 import json
 import logging
 from collections.abc import Iterable
@@ -120,6 +121,74 @@ def parse_player_stats(item: dict) -> list[dict]:
     return rows
 
 
+def parse_lineups(item: dict) -> tuple[list[dict], list[dict]]:
+    """Formation/coach per team, and every player of the match sheet with his pitch slot."""
+    fixture_id = item["fixture"]["id"]
+    teams, players = [], []
+    for lineup in item.get("lineups") or []:
+        team_id = (lineup.get("team") or {}).get("id")
+        if team_id is None:
+            continue
+        teams.append({"fixture_id": fixture_id, "team_id": team_id,
+                      "formation": lineup.get("formation"),
+                      "coach": (lineup.get("coach") or {}).get("name")})  # fmt: skip
+        for group, started in (("startXI", True), ("substitutes", False)):
+            for entry in lineup.get(group) or []:
+                p = entry.get("player") or {}
+                if p.get("id") is None or not p.get("name"):
+                    continue
+                players.append({"fixture_id": fixture_id, "team_id": team_id,
+                                "player_id": p["id"], "player_name": html.unescape(p["name"]),
+                                "number": p.get("number"), "pos": p.get("pos"),
+                                "grid": p.get("grid") if started else None,
+                                "started": started})  # fmt: skip
+    return teams, players
+
+
+def _lineup_frames(items: list[dict]) -> tuple[pd.DataFrame, pd.DataFrame]:
+    parsed = [parse_lineups(i) for i in items]
+    teams = pd.DataFrame([t for ts, _ in parsed for t in ts])
+    players = pd.DataFrame([p for _, ps in parsed for p in ps])
+    if not teams.empty:
+        teams = teams.drop_duplicates(["fixture_id", "team_id"])
+    if not players.empty:
+        players = _ints(players.drop_duplicates(["fixture_id", "player_id"]), ["number"])
+    return teams, players
+
+
+def _copy_lineups(conn, teams: pd.DataFrame, players: pd.DataFrame) -> None:
+    if not teams.empty:
+        copy_rows(conn, "api_lineup", teams)
+    if not players.empty:
+        copy_rows(conn, "api_lineup_player", players)
+
+
+def load_lineups_from_disk(leagues: list[str] | None = None) -> int:
+    """Fill the lineup tables from the stored raw payloads: no API requests.
+
+    Only fixtures present in api_fixture and without lineup rows yet are loaded.
+    """
+    done = set(read_sql("SELECT DISTINCT fixture_id FROM api_lineup").fixture_id)
+    known = set(read_sql("SELECT fixture_id FROM api_fixture").fixture_id)
+    loaded = 0
+    for league_dir in sorted(RAW_API.iterdir()) if RAW_API.exists() else []:
+        if leagues and league_dir.name not in leagues:
+            continue
+        batch = []
+        for path in league_dir.glob("*/*.json.gz"):
+            fixture_id = int(path.name.split(".")[0])
+            if fixture_id in done or fixture_id not in known:
+                continue
+            batch.append(json.loads(gzip.decompress(path.read_bytes())))
+        for chunk in _chunks(batch, 2000):
+            teams, players = _lineup_frames(chunk)
+            with get_engine().begin() as conn:
+                _copy_lineups(conn, teams, players)
+            loaded += len(chunk)
+        log.info("lineups %s: %d fixtures loaded", league_dir.name, len(batch))
+    return loaded
+
+
 # --------------------------------------------------------------------------- download
 
 
@@ -159,10 +228,13 @@ def _store(items: list[dict], league_code: str, season: int) -> None:
     teams = _ints(teams, [c for c in TEAM_STATS.values() if c not in ("possession", "xg")])
     players = pd.DataFrame([r for i in items for r in parse_player_stats(i)])
     players = _ints(players, PLAYER_INT_COLUMNS)
+    lineup_teams, lineup_players = _lineup_frames(items)
     ids = fixtures.fixture_id.tolist()
     with get_engine().begin() as conn:
+        # ON DELETE CASCADE clears the stats and lineup rows of a re-downloaded fixture.
         conn.execute(text("DELETE FROM api_fixture WHERE fixture_id = ANY(:ids)"), {"ids": ids})
         copy_rows(conn, "api_fixture", fixtures)
+        _copy_lineups(conn, lineup_teams, lineup_players)
         if not teams.empty:
             copy_rows(
                 conn, "api_team_match", teams.reindex(columns=_columns(conn, "api_team_match"))

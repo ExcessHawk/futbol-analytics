@@ -24,6 +24,7 @@ nav = st.navigation(
             ),
             st.Page("views/equipos.py", title="Equipos", icon=":material/groups:"),
             st.Page("views/jugadores.py", title="Jugadores", icon=":material/person:"),
+            st.Page("views/alineaciones.py", title="Alineaciones", icon=":material/stadium:"),
         ],
         "Apuestas": [
             st.Page("views/predicciones.py", title="Predicciones", icon=":material/insights:"),
